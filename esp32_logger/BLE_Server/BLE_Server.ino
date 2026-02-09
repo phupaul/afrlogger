@@ -104,11 +104,24 @@ void loop() {
   float afr = (v_afr / 3.3) * 10.0 + 10.0;
 
   // ====== ĐỌC MAP ======
-  int adc_map = analogRead(PIN_MAP);
-  float v_map = adc_map * 3.3 / 4095.0;
-  // ví dụ MAP 0.5–4.5V = 20–250 kPa
-  float map_kpa = (v_map - 0.5) * (230.0 / 4.0) + 20.0;
-  if (map_kpa < 0) map_kpa = 0;
+  // ====== ĐỌC MAP (GM 25195786 + chia áp + bù lệch) ======
+int adc_map = analogRead(PIN_MAP);
+
+// điện áp tại ADC (0–3.3V)
+float v_adc = adc_map * 3.3 / 4095.0;
+
+// khôi phục điện áp thực MAP (20k/10k)
+float v_map = v_adc * 3.0;
+
+// bù lệch sensor
+v_map -= 0.85;
+
+// chặn ngưỡng an toàn
+if (v_map < 0.5) v_map = 0.5;
+if (v_map > 4.5) v_map = 4.5;
+
+// GM 1 bar: 0.5–4.5V → 10–105 kPa
+float map_kpa = (v_map - 0.5) * (105.0 / 4.0) + 10.0;
 
   // ====== GỬI BLE ======
   char buf[64];
